@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Site Blocker</title>
+    <link rel="stylesheet" href="popup.css" />
+    <script type="module" src="popup.js"></script>
+  </head>
+  <body>
+    <header>
+      <div class="brand">
+        <img id="logo" src="../icons/on-32.png" alt="" />
+        <h1>Site Blocker</h1>
+      </div>
+      <label class="switch" title="Turn blocking on or off">
+        <input id="enabled" type="checkbox" role="switch" aria-label="Blocking" />
+        <span class="track"></span>
+      </label>
+    </header>
+    <p id="status" class="status"></p>
+
+    <form id="add-form">
+      <input
+        id="site-input"
+        type="text"
+        placeholder="e.g. youtube.com"
+        aria-label="Website to block"
+        autocomplete="off"
+        spellcheck="false"
+        autofocus
+      />
+      <button class="primary" type="submit">Add</button>
+    </form>
+    <p id="message" class="message" role="alert" hidden></p>
+    <button id="block-current" class="block-current" type="button" hidden></button>
+
+    <ul id="site-list" aria-label="Blocked websites"></ul>
+    <p id="empty" class="empty" hidden>No blocked sites yet.</p>
+  </body>
+</html>
