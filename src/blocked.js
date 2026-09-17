@@ -1,8 +1,8 @@
-import { blockedBy, loadSettings } from './shared.js';
+import { blockedBy, loadSettings, requestOverdueChanges } from "./shared.js";
 
 // The background worker puts the blocked URL after the "#".
 const originalUrl = location.hash.slice(1);
-let host = '';
+let host = "";
 try {
   host = new URL(originalUrl).hostname;
 } catch {
@@ -10,14 +10,14 @@ try {
 }
 
 if (host) {
-  const site = host.replace(/^www\./, '');
-  document.getElementById('site').textContent = site;
+  const site = host.replace(/^www\./, "");
+  document.getElementById("site").textContent = site;
   document.title = `${site} is blocked`;
 }
 
-const backButton = document.getElementById('back');
+const backButton = document.getElementById("back");
 backButton.hidden = history.length < 2;
-backButton.addEventListener('click', () => history.back());
+backButton.addEventListener("click", () => history.back());
 
 // Continue to the site as soon as it's no longer blocked. This waits for the
 // background worker's signal rather than watching storage directly, because
@@ -29,5 +29,24 @@ async function continueIfUnblocked() {
 }
 
 chrome.runtime.onMessage.addListener((message) => {
-  if (message === 'settings-applied') continueIfUnblocked();
+  if (message === "settings-applied") continueIfUnblocked();
 });
+
+// When blocking is turning off or this site is being removed, ask the worker
+// to finish the change once it's due, in case its alarm runs late.
+let unblockAt = Infinity;
+async function readUnblockTime() {
+  const { disableAt, removeAt, sites } = await loadSettings();
+  unblockAt = Math.min(
+    disableAt ?? Infinity,
+    removeAt[blockedBy(host, sites)] ?? Infinity,
+  );
+}
+
+if (host) {
+  readUnblockTime();
+  chrome.storage.onChanged.addListener(readUnblockTime);
+  setInterval(() => {
+    if (unblockAt <= Date.now()) requestOverdueChanges();
+  }, 1000);
+}

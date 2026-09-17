@@ -13,11 +13,21 @@
         <h1>Site Blocker</h1>
       </div>
       <label class="switch" title="Turn blocking on or off">
-        <input id="enabled" type="checkbox" role="switch" aria-label="Blocking" />
+        <input
+          id="enabled"
+          type="checkbox"
+          role="switch"
+          aria-label="Blocking"
+        />
         <span class="track"></span>
       </label>
     </header>
-    <p id="status" class="status"></p>
+    <p class="status">
+      <span id="status"></span>
+      <button id="cancel-disable" class="link" type="button" hidden>
+        Cancel
+      </button>
+    </p>
 
     <form id="add-form">
       <input
@@ -32,7 +42,12 @@
       <button class="primary" type="submit">Add</button>
     </form>
     <p id="message" class="message" role="alert" hidden></p>
-    <button id="block-current" class="block-current" type="button" hidden></button>
+    <button
+      id="block-current"
+      class="block-current"
+      type="button"
+      hidden
+    ></button>
 
     <ul id="site-list" aria-label="Blocked websites"></ul>
     <p id="empty" class="empty" hidden>No blocked sites yet.</p>

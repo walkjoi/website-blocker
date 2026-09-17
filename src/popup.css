@@ -30,7 +30,12 @@ body {
   width: 320px;
   margin: 0;
   padding: 16px;
-  font: 14px/1.4 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font:
+    14px/1.4 system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
   background: var(--bg);
   color: var(--text);
 }
@@ -97,7 +102,7 @@ h1 {
 }
 
 .track::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 3px;
   left: 3px;
@@ -122,13 +127,38 @@ h1 {
   outline-offset: 2px;
 }
 
+/* Turning off: stays on until the countdown ends */
+.switch input:disabled {
+  cursor: default;
+}
+
+.switch input:disabled + .track {
+  opacity: 0.6;
+}
+
+.link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.countdown {
+  font-variant-numeric: tabular-nums;
+}
+
 /* Add form */
 form {
   display: flex;
   gap: 8px;
 }
 
-input[type='text'] {
+input[type="text"] {
   flex: 1;
   min-width: 0;
   padding: 8px 10px;
@@ -139,7 +169,7 @@ input[type='text'] {
   font: inherit;
 }
 
-input[type='text']:focus {
+input[type="text"]:focus {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
@@ -204,7 +234,7 @@ li:hover {
   background: var(--surface);
 }
 
-li span {
+li .name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -225,6 +255,32 @@ li span {
 .remove:hover {
   background: var(--border);
   color: var(--text);
+}
+
+li.removing .name {
+  color: var(--muted);
+}
+
+li .countdown {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.cancel {
+  height: 26px;
+  flex-shrink: 0;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.cancel:hover {
+  background: var(--border);
 }
 
 .empty {
