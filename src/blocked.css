@@ -5,6 +5,9 @@
   --border: #e4e4e7;
   --text: #18181b;
   --muted: #71717a;
+  --accent: #e5484d;
+  --accent-hover: #d63a3f;
+  --on-accent: #ffffff;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -14,6 +17,8 @@
     --border: #3f3f46;
     --text: #fafafa;
     --muted: #a1a1aa;
+    --accent: #f2555a;
+    --accent-hover: #ff6a6f;
   }
 }
 
@@ -51,6 +56,17 @@ p {
   color: var(--muted);
 }
 
+.countdown {
+  font-variant-numeric: tabular-nums;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
 button {
   padding: 10px 20px;
   border: 1px solid var(--border);
@@ -63,4 +79,16 @@ button {
 
 button:hover {
   border-color: var(--muted);
+}
+
+.primary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+}
+
+.primary:hover {
+  border-color: var(--accent-hover);
+  background: var(--accent-hover);
 }

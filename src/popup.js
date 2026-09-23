@@ -1,16 +1,19 @@
 import {
   DEFAULT_SETTINGS,
+  REENABLE_DELAY_MS,
   UNBLOCK_DELAY_MS,
   blockedBy,
+  countdown,
   loadSettings,
+  minutesLabel,
   normalizeSite,
-  requestOverdueChanges,
+  updateCountdowns,
 } from "./shared.js";
 
 const logo = document.getElementById("logo");
 const toggle = document.getElementById("enabled");
 const status = document.getElementById("status");
-const cancelDisableButton = document.getElementById("cancel-disable");
+const cancelButton = document.getElementById("cancel");
 const form = document.getElementById("add-form");
 const input = document.getElementById("site-input");
 const message = document.getElementById("message");
@@ -69,24 +72,31 @@ function showMessage(text) {
 }
 
 function render() {
-  const { enabled, sites, disableAt, enableAt } = settings;
+  const { enabled, sites, readyAt, readyUntil, enableAt } = settings;
 
   toggle.checked = enabled;
-  // Blocking is already turning off; the Cancel button is the only thing to do.
-  toggle.disabled = Boolean(disableAt);
+  // While the wait runs, Cancel is the only thing to do with the switch.
+  toggle.disabled = Boolean(readyAt);
   document.body.classList.toggle("off", !enabled);
   logo.src = `../icons/${enabled ? "on" : "off"}-32.png`;
 
-  if (disableAt)
-    status.replaceChildren("Turning off in ", countdown(disableAt));
-  else if (!enabled && enableAt)
+  if (readyAt) {
+    status.replaceChildren("You can turn blocking off in ", countdown(readyAt));
+    cancelButton.textContent = "Cancel";
+  } else if (readyUntil) {
+    status.replaceChildren(
+      `Ready: switch off for ${minutesLabel(REENABLE_DELAY_MS)}. Offer ends in `,
+      countdown(readyUntil),
+    );
+    cancelButton.textContent = "Dismiss";
+  } else if (!enabled && enableAt)
     status.replaceChildren("Blocking is off, back on in ", countdown(enableAt));
   else if (!enabled) status.textContent = "Blocking is off";
   else if (sites.length === 0)
     status.textContent = "Add a site to start blocking";
   else
     status.textContent = `Blocking ${sites.length} site${sites.length === 1 ? "" : "s"}`;
-  cancelDisableButton.hidden = !disableAt;
+  cancelButton.hidden = !(readyAt || readyUntil);
 
   list.replaceChildren(...sites.map(renderSite));
   empty.hidden = sites.length > 0;
@@ -136,35 +146,25 @@ function renderSite(site) {
   return item;
 }
 
-// A "4:59"-style countdown to `until`, kept current by updateCountdowns().
-function countdown(until) {
-  const time = document.createElement("span");
-  time.className = "countdown";
-  time.dataset.until = until;
-  return time;
-}
-
-function timeLeft(until) {
-  const seconds = Math.max(0, Math.ceil((until - Date.now()) / 1000));
-  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
-}
-
-function updateCountdowns() {
-  let overdue = false;
-  for (const time of document.querySelectorAll(".countdown")) {
-    const until = Number(time.dataset.until);
-    time.textContent = timeLeft(until);
-    if (until <= Date.now()) overdue = true;
-  }
-  if (overdue) requestOverdueChanges();
-}
-
 toggle.addEventListener("change", () => {
-  if (toggle.checked) save({ enabled: true, disableAt: null, enableAt: null });
-  else save({ disableAt: Date.now() + UNBLOCK_DELAY_MS });
+  if (toggle.checked) {
+    save({ enabled: true, readyAt: null, readyUntil: null, enableAt: null });
+  } else if (settings.readyUntil && settings.readyUntil > Date.now()) {
+    // Taking the offer: blocking turns off now, for a while.
+    save({
+      enabled: false,
+      readyUntil: null,
+      enableAt: Date.now() + REENABLE_DELAY_MS,
+    });
+  } else {
+    // Starting the wait. Blocking stays on until it ends (see render).
+    save({ readyAt: Date.now() + UNBLOCK_DELAY_MS });
+  }
 });
 
-cancelDisableButton.addEventListener("click", () => save({ disableAt: null }));
+cancelButton.addEventListener("click", () =>
+  save({ readyAt: null, readyUntil: null }),
+);
 
 form.addEventListener("submit", (event) => {
   event.preventDefault();

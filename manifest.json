@@ -3,7 +3,7 @@
   "name": "Site Blocker",
   "version": "1.0.0",
   "description": "Block distracting websites with one switch.",
-  "permissions": ["alarms", "declarativeNetRequest", "storage"],
+  "permissions": ["alarms", "declarativeNetRequest", "notifications", "storage"],
   "host_permissions": ["<all_urls>"],
   "background": {
     "service_worker": "src/background.js",

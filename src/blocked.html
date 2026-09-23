@@ -12,12 +12,19 @@
     <main>
       <img class="icon" src="../icons/on-128.png" alt="" />
       <h1><span id="site">This site</span> is blocked</h1>
-      <p>
+      <p id="status">
         To visit it, turn off blocking or remove the site in the Site Blocker
-        menu. After a short wait, this page will continue to the site
-        automatically.
+        menu.
       </p>
-      <button id="back" type="button" hidden>Go back</button>
+      <div class="actions">
+        <button id="request" class="primary" type="button" hidden></button>
+        <button id="start" class="primary" type="button" hidden></button>
+        <button id="continue" class="primary" type="button" hidden>
+          Continue
+        </button>
+        <button id="cancel" type="button" hidden>Cancel</button>
+        <button id="back" type="button" hidden>Go back</button>
+      </div>
     </main>
   </body>
 </html>
