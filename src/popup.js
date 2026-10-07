@@ -1,19 +1,25 @@
 import {
   DEFAULT_SETTINGS,
-  REENABLE_DELAY_MS,
-  UNBLOCK_DELAY_MS,
+  MAX_SAVED_MS,
+  REMOVE_DELAY_MS,
   blockedBy,
+  canTakeBreak,
   countdown,
+  endBreak,
+  focusMinutes,
+  focusUntilBreak,
   loadSettings,
   minutesLabel,
   normalizeSite,
+  savedBreak,
+  takeBreak,
   updateCountdowns,
 } from "./shared.js";
 
 const logo = document.getElementById("logo");
 const toggle = document.getElementById("enabled");
 const status = document.getElementById("status");
-const cancelButton = document.getElementById("cancel");
+const breakButton = document.getElementById("break");
 const form = document.getElementById("add-form");
 const input = document.getElementById("site-input");
 const message = document.getElementById("message");
@@ -23,6 +29,8 @@ const empty = document.getElementById("empty");
 
 let settings = await loadSettings();
 const currentSite = await getCurrentSite();
+// What focusMinutes was when the page last rendered.
+let shownFocus;
 
 // Saving to storage is all it takes: the background worker picks up the change.
 function save(changes) {
@@ -49,7 +57,7 @@ function addSite(site) {
 function removeSite(site) {
   if (settings.enabled) {
     save({
-      removeAt: { ...settings.removeAt, [site]: Date.now() + UNBLOCK_DELAY_MS },
+      removeAt: { ...settings.removeAt, [site]: Date.now() + REMOVE_DELAY_MS },
     });
   } else {
     save({ sites: settings.sites.filter((s) => s !== site) });
@@ -72,31 +80,33 @@ function showMessage(text) {
 }
 
 function render() {
-  const { enabled, sites, readyAt, readyUntil, enableAt } = settings;
+  const { enabled, sites, enableAt } = settings;
+  const onBreak = !enabled && enableAt;
+  const saved = savedBreak(settings);
+  shownFocus = focusMinutes(settings);
 
   toggle.checked = enabled;
-  // While the wait runs, Cancel is the only thing to do with the switch.
-  toggle.disabled = Boolean(readyAt);
+  // Blocking only turns off for a break, so there has to be one to take.
+  toggle.disabled = enabled && !canTakeBreak(settings);
   document.body.classList.toggle("off", !enabled);
   logo.src = `../icons/${enabled ? "on" : "off"}-32.png`;
 
-  if (readyAt) {
-    status.replaceChildren("You can turn blocking off in ", countdown(readyAt));
-    cancelButton.textContent = "Cancel";
-  } else if (readyUntil) {
-    status.replaceChildren(
-      `Ready: switch off for ${minutesLabel(REENABLE_DELAY_MS)}. Offer ends in `,
-      countdown(readyUntil),
-    );
-    cancelButton.textContent = "Dismiss";
-  } else if (!enabled && enableAt)
-    status.replaceChildren("Blocking is off, back on in ", countdown(enableAt));
-  else if (!enabled) status.textContent = "Blocking is off";
+  if (onBreak) {
+    status.replaceChildren("On a break, back on in ", countdown(enableAt));
+    breakButton.textContent = "Back to work";
+  } else if (!enabled) status.textContent = "Blocking is off";
   else if (sites.length === 0)
     status.textContent = "Add a site to start blocking";
-  else
-    status.textContent = `Blocking ${sites.length} site${sites.length === 1 ? "" : "s"}`;
-  cancelButton.hidden = !(readyAt || readyUntil);
+  else if (canTakeBreak(settings)) {
+    const full = saved >= MAX_SAVED_MS ? " (full)" : "";
+    const length = minutesLabel(saved, Math.floor);
+    status.textContent = `${length} of break saved${full}`;
+    breakButton.textContent = "Take it";
+  } else {
+    const focus = minutesLabel(focusUntilBreak(settings), Math.ceil);
+    status.textContent = `Next break after ${focus} of focus`;
+  }
+  breakButton.hidden = !onBreak && !canTakeBreak(settings);
 
   list.replaceChildren(...sites.map(renderSite));
   empty.hidden = sites.length > 0;
@@ -146,25 +156,19 @@ function renderSite(site) {
   return item;
 }
 
+// Switching off takes the break that's saved; switching back on ends it early,
+// and saves what's left of it for later.
 toggle.addEventListener("change", () => {
-  if (toggle.checked) {
-    save({ enabled: true, readyAt: null, readyUntil: null, enableAt: null });
-  } else if (settings.readyUntil && settings.readyUntil > Date.now()) {
-    // Taking the offer: blocking turns off now, for a while.
-    save({
-      enabled: false,
-      readyUntil: null,
-      enableAt: Date.now() + REENABLE_DELAY_MS,
-    });
-  } else {
-    // Starting the wait. Blocking stays on until it ends (see render).
-    save({ readyAt: Date.now() + UNBLOCK_DELAY_MS });
-  }
+  if (toggle.checked) save(endBreak(settings));
+  else if (canTakeBreak(settings)) save(takeBreak(settings));
+  else render();
 });
 
-cancelButton.addEventListener("click", () =>
-  save({ readyAt: null, readyUntil: null }),
-);
+breakButton.addEventListener("click", () => {
+  if (!settings.enabled) save(endBreak(settings));
+  // The break may have been taken from a blocked page since this last rendered.
+  else if (canTakeBreak(settings)) save(takeBreak(settings));
+});
 
 form.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -184,7 +188,8 @@ input.addEventListener("input", () => showMessage(""));
 
 blockCurrentButton.addEventListener("click", () => addSite(currentSite));
 
-// The background worker saves settings too, when a delayed change goes through.
+// The background worker saves settings too: when a delayed change goes through,
+// and when it counts focus time.
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== "local") return;
   for (const [key, { newValue }] of Object.entries(changes)) {
@@ -193,5 +198,9 @@ chrome.storage.onChanged.addListener((changes, area) => {
   render();
 });
 
-setInterval(updateCountdowns, 1000);
+// Focus time adds up without anything being saved (see savedBreak).
+setInterval(() => {
+  updateCountdowns();
+  if (focusMinutes(settings) !== shownFocus) render();
+}, 1000);
 render();

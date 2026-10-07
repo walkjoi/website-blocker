@@ -36,7 +36,7 @@ body {
 }
 
 main {
-  max-width: 440px;
+  max-width: 480px;
 }
 
 .icon {
@@ -91,4 +91,52 @@ button:hover {
 .primary:hover {
   border-color: var(--accent-hover);
   background: var(--accent-hover);
+}
+
+.quiet {
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted);
+}
+
+[hidden] {
+  display: none !important;
+}
+
+.reminder {
+  margin-bottom: 8px;
+  color: var(--text);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* Borrowing time: say what it's for, then pick how long */
+.borrow {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 8px;
+  text-align: left;
+}
+
+.borrow label {
+  font-weight: 600;
+}
+
+.borrow input {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+
+.borrow input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+.borrow .actions {
+  justify-content: flex-start;
 }

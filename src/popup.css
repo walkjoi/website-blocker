@@ -127,7 +127,7 @@ h1 {
   outline-offset: 2px;
 }
 
-/* Waiting: the switch stays on until the countdown ends */
+/* No break saved: the switch stays on until one is */
 .switch input:disabled {
   cursor: default;
 }
